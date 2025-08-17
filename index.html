@@ -50,9 +50,9 @@
     #chatPopup { display: none; position: fixed; bottom: 20px; right: 20px; width: 300px; height: 400px; background: white; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; }
     #chatPopup.active { display: block; }
     #chatHeader { background: var(--brand); color: white; padding: 10px; text-align: center; cursor: move; }
-    #chatContent { padding: 10px; height: calc(100% - 60px); overflow-y: auto; }
-    #chatInput { width: 100%; padding: 5px; margin-top: 10px; border: 1px solid var(--border); border-radius: 4px; }
-    #chatFooter { padding: 10px; border-top: 1px solid var(--border); }
+    #chatContent { padding: 10px; height: calc(100% - 80px); overflow-y: auto; }
+    #chatInput { width: 100%; padding: 5px; margin-top: 5px; border: 1px solid var(--border); border-radius: 4px; }
+    #chatFooter { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 5px; }
   </style>
 </head>
 <body>
@@ -88,7 +88,9 @@
 
     <div id="chatPopup">
       <div id="chatHeader">AI Assistant</div>
-      <div id="chatContent"></div>
+      <div id="chatContent">
+        <p><strong>AI:</strong> Hello! I’m here to help with your estimating questions. Try asking about formulas, units, or anything else!</p>
+      </div>
       <div id="chatFooter">
         <input type="text" id="chatInput" placeholder="Type your question...">
         <button class="btn" onclick="sendMessage()">Send</button>
@@ -398,7 +400,9 @@
 
       openChatBtn.addEventListener("click", () => {
         chatPopup.classList.add("active");
-        chatContent.innerHTML = "Hello! How can I assist with your estimating today? (e.g., 'What is the formula for total cost?' or 'Explain units')";
+        if (!chatContent.innerHTML) {
+          chatContent.innerHTML = "<p><strong>AI:</strong> Hello! I’m here to help with your estimating questions. Try asking about formulas, units, or anything else!</p>";
+        }
       });
 
       $("#chatHeader").addEventListener("mousedown", startDragging);
@@ -406,8 +410,8 @@
       document.addEventListener("mouseup", stopDragging);
 
       function startDragging(e) {
-        initialX = e.clientX - currentX;
-        initialY = e.clientY - currentY;
+        initialX = e.clientX - (currentX || 0);
+        initialY = e.clientY - (currentY || 0);
         isDragging = true;
       }
 
@@ -435,7 +439,7 @@
           } else if (message.toLowerCase().includes("explain units")) {
             response = "Units like sq.m (square meters), cu.m (cubic meters), and linear m are used to measure area, volume, and length respectively.";
           } else {
-            response = "Sorry, I can help with basic estimating questions like formulas or units. For more, use the Full AI Chat.";
+            response = "I can assist with basic estimating questions like formulas or units. For more complex queries, try the Full AI Chat.";
           }
           chatContent.innerHTML += `<p><strong>AI:</strong> ${response}</p>`;
           chatInput.value = "";
@@ -444,21 +448,26 @@
       }
 
       function openGrokChat() {
-        const data = {};
-        $$(".panel").forEach(panel => {
-          const discipline = panel.dataset.discipline;
-          data[discipline] = $$("tbody tr", panel).map(tr => {
-            const scope = $$("input", tr)[0].value || "N/A";
-            const qty = parseFloat($$("input", tr)[1].value) || 0;
-            const unit = $$("select", tr)[0].value || "N/A";
-            const ucm = parseFloat($$("input", tr)[2].value) || 0;
-            const ucl = parseFloat($$("input", tr)[3].value) || 0;
-            return { scope, qty, unit, ucm, ucl };
+        try {
+          const data = {};
+          $$(".panel").forEach(panel => {
+            const discipline = panel.dataset.discipline;
+            data[discipline] = $$("tbody tr", panel).map(tr => {
+              const scope = $$("input", tr)[0].value || "N/A";
+              const qty = parseFloat($$("input", tr)[1].value) || 0;
+              const unit = $$("select", tr)[0].value || "N/A";
+              const ucm = parseFloat($$("input", tr)[2].value) || 0;
+              const ucl = parseFloat($$("input", tr)[3].value) || 0;
+              return { scope, qty, unit, ucm, ucl };
+            });
           });
-        });
-        const query = encodeURIComponent(JSON.stringify(data));
-        window.open(`https://www.grok.com/?q=Provide%20construction%20estimating%20advice%20for%20${query}`, '_blank');
-        chatPopup.classList.remove("active");
+          const query = encodeURIComponent(JSON.stringify(data));
+          window.open(`https://www.grok.com/?q=Provide%20construction%20estimating%20advice%20for%20${query}`, '_blank');
+          chatPopup.classList.remove("active");
+        } catch (error) {
+          alert("Failed to open full AI chat. Please visit https://www.grok.com/ manually.");
+          console.error("Grok chat error:", error);
+        }
       }
 
       // Close chat on click outside
