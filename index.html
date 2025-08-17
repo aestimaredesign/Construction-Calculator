@@ -47,15 +47,6 @@
     .grand .label { color: #9a3412; font-weight: 700; }
     .grand .amount { font-weight: 800; font-size: 1.1rem; }
     .hint { color: var(--ink-soft); font-size: 12px; }
-    #chatPopup { display: none; position: fixed; bottom: 20px; right: 20px; width: 350px; height: 450px; background: white; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-    #chatPopup.active { display: block; }
-    #chatHeader { background: var(--brand); color: white; padding: 10px; text-align: center; cursor: move; }
-    #chatContent { padding: 10px; height: calc(100% - 90px); overflow-y: auto; }
-    #chatInput { width: calc(100% - 110px); padding: 5px; margin-top: 5px; border: 1px solid var(--border); border-radius: 4px; }
-    #chatFooter { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 5px; align-items: center; }
-    #priceModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-    #priceModalContent { background: white; margin: 10% auto; padding: 20px; width: 80%; max-width: 500px; border-radius: 8px; }
-    #priceModal button { margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -86,28 +77,6 @@
     </div>
     <div style="margin-top: 20px;">
       <button class="btn" onclick="exportToXLSX()">Export to XLSX</button>
-      <button class="btn" onclick="showPrices()">Suggest Material Prices</button>
-      <button class="btn" id="openChatBtn">Open TantyBot Chat</button>
-    </div>
-
-    <div id="chatPopup">
-      <div id="chatHeader">TantyBot</div>
-      <div id="chatContent">
-        <p><strong>TantyBot:</strong> Hello! I’m TantyBot, your expert in construction cost estimating. Please provide project details (e.g., location, square footage, scope) or ask a question!</p>
-      </div>
-      <div id="chatFooter">
-        <input type="text" id="chatInput" placeholder="Type your question or details...">
-        <button class="btn" id="sendBtn">Send</button>
-        <button class="btn secondary" onclick="openGrokChat()">Full AI Chat</button>
-      </div>
-    </div>
-
-    <div id="priceModal">
-      <div id="priceModalContent">
-        <h3>Material Price Suggestions (Q2 2025 or Latest)</h3>
-        <p id="priceData">Loading prices...</p>
-        <button class="btn" onclick="closePrices()">Close</button>
-      </div>
     </div>
   </div>
 
@@ -226,10 +195,6 @@
       const grandTotalEl = $("#grandTotal");
       const grandSymbolEl = $("#grandSymbol");
       const currencySel = $("#currencySel");
-      const chatPopup = $("#chatPopup");
-      const chatContent = $("#chatContent");
-      const chatInput = $("#chatInput");
-      const sendBtn = $("#sendBtn");
 
       function fmt(n, dec = 2) {
         return Number(n).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
@@ -402,189 +367,6 @@
         XLSX.writeFile(wb, `construction_estimate_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}.xlsx`);
         console.log("Export to XLSX completed");
       };
-
-      // Material Price Suggestions
-      const priceFallback = {
-        "Civil-Structural Works": {
-          "Concrete (cu.m)": 96,
-          "Rebar (kg)": 0.8,
-          "Formwork (sq.m)": 15
-        },
-        "Architectural Works": {
-          "Gypsum Board (sq.m)": 6.1,
-          "Tiles (sq.m)": 20,
-          "Paint (sq.m)": 2.5
-        },
-        "Plumbing and Sanitary Works": {
-          "PVC Pipe (linear m)": 1.5,
-          "Fixtures (unit)": 50
-        },
-        "Electrical Works": {
-          "Wiring (linear m)": 0.5,
-          "Lighting Fixtures (unit)": 10
-        }
-      };
-
-      window.showPrices = function() {
-        let priceModal = $("#priceModal");
-        if (!priceModal) {
-          priceModal = document.createElement("div");
-          priceModal.id = "priceModal";
-          const priceModalContent = document.createElement("div");
-          priceModalContent.id = "priceModalContent";
-          priceModalContent.innerHTML = `
-            <h3>Material Price Suggestions (Q2 2025 or Latest)</h3>
-            <p id="priceData">Loading prices...</p>
-            <button class="btn" onclick="closePrices()">Close</button>
-          `;
-          priceModal.appendChild(priceModalContent);
-          document.body.appendChild(priceModal);
-        }
-        priceModal.style.display = "block";
-        const priceData = $("#priceData");
-        const content = Object.entries(priceFallback).map(([discipline, prices]) => 
-          `${discipline}: ${Object.entries(prices).map(([item, price]) => `${item}: ${currencySymbol()}${fmt(price, decPlaces())}`).join(", ")}`
-        ).join("<br>");
-        priceData.innerHTML = content || "No price data available. Check back later for updates.";
-      };
-
-      window.closePrices = function() {
-        const priceModal = $("#priceModal");
-        if (priceModal) priceModal.style.display = "none";
-      };
-
-      // TantyBot Chat Functionality
-      let projectHistory = { location: "", squareFootage: 0, materials: "Standard", trades: {} };
-      let isDragging = false;
-      let currentX;
-      let currentY;
-      let initialX;
-      let initialY;
-
-      $("#openChatBtn").addEventListener("click", () => {
-        chatPopup.classList.add("active");
-        if (!chatContent.innerHTML) {
-          chatContent.innerHTML = "<p><strong>TantyBot:</strong> Hello! I’m TantyBot, your expert in construction cost estimating. Please provide project details (e.g., location, square footage, scope) or ask a question!</p>";
-        }
-      });
-
-      $("#chatHeader").addEventListener("mousedown", startDragging);
-      document.addEventListener("mousemove", drag);
-      document.addEventListener("mouseup", stopDragging);
-
-      function startDragging(e) {
-        initialX = e.clientX - (currentX || 0);
-        initialY = e.clientY - (currentY || 0);
-        isDragging = true;
-      }
-
-      function drag(e) {
-        if (isDragging) {
-          e.preventDefault();
-          currentX = e.clientX - initialX;
-          currentY = e.clientY - initialY;
-          chatPopup.style.left = currentX + "px";
-          chatPopup.style.top = currentY + "px";
-        }
-      }
-
-      function stopDragging() {
-        isDragging = false;
-      }
-
-      sendBtn.addEventListener("click", sendMessage); // Explicitly attach event listener
-
-      function sendMessage() {
-        const message = chatInput.value.trim();
-        if (message) {
-          chatContent.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
-          let response = handleTantyBotResponse(message);
-          chatContent.innerHTML += `<p><strong>TantyBot:</strong> ${response}</p>`;
-          chatInput.value = "";
-          chatContent.scrollTop = chatContent.scrollHeight;
-        }
-      }
-
-      function handleTantyBotResponse(message) {
-        // Update project history from calculator inputs
-        projectHistory.location = prompt("Please enter the project location (e.g., city, country):") || projectHistory.location || "Unknown";
-        projectHistory.squareFootage = parseFloat(prompt("Please enter the square footage (m²):")) || projectHistory.squareFootage || 0;
-        projectHistory.materials = prompt("Please enter material preferences (e.g., standard, premium):") || projectHistory.materials;
-        projectHistory.trades = {};
-        $$(".panel").forEach(panel => {
-          const discipline = panel.dataset.discipline;
-          projectHistory.trades[discipline] = $$("tbody tr", panel).map(tr => ({
-            scope: $$("input", tr)[0].value || "N/A",
-            qty: parseFloat($$("input", tr)[1].value) || 0,
-            unit: $$("select", tr)[0].value || "N/A",
-            ucm: parseFloat($$("input", tr)[2].value) || 0,
-            ucl: parseFloat($$("input", tr)[3].value) || 0
-          }));
-        });
-
-        if (message.toLowerCase().includes("estimate") || message.toLowerCase().includes("cost")) {
-          return generateCostEstimate();
-        } else if (message.toLowerCase().includes("formula")) {
-          return "Total Cost = (Quantity × Unit Cost Material) + (Quantity × Unit Cost Labor) + Indirect Costs (15%) + Contingency (10%).";
-        } else if (message.toLowerCase().includes("units")) {
-          return "Default units are metric (sq.m, cu.m, linear m). I can convert to English units (sq.ft, cu.yd) on request.";
-        } else if (message.toLowerCase().includes("chart")) {
-          return "Would you like me to create a chart to visualize this cost breakdown?";
-        } else if (message.toLowerCase().includes("update") && projectHistory.trades) {
-          return updateEstimate(message);
-        } else {
-          return "I specialize in construction cost estimating. Please provide details (e.g., location, scope) or ask about formulas, units, or charts. If needed, clarify: Could you confirm the project location or material grade?";
-        }
-      }
-
-      function generateCostEstimate() {
-        let totalCost = 0;
-        let estimate = "<h4>Cost Estimate Breakdown</h4><ul>";
-        for (let discipline in projectHistory.trades) {
-          let discTotal = 0;
-          estimate += `<li><strong>${discipline}:</strong><ul>`;
-          projectHistory.trades[discipline].forEach((item, index) => {
-            const matCost = item.qty * item.ucm;
-            const labCost = item.qty * item.ucl;
-            const itemTotal = matCost + labCost;
-            discTotal += itemTotal;
-            estimate += `<li>${index + 1}. ${item.scope}: ${item.qty} ${item.unit} @ ${currencySymbol()}${fmt(item.ucm)} (M), ${currencySymbol()}${fmt(item.ucl)} (L) = ${currencySymbol()}${fmt(itemTotal)}</li>`;
-          });
-          estimate += `<li>Total ${discipline}: ${currencySymbol()}${fmt(discTotal)}</li></ul>`;
-          totalCost += discTotal;
-        }
-        const indirectCost = totalCost * 0.15;
-        const contingency = totalCost * 0.10;
-        totalCost += indirectCost + contingency;
-        estimate += `<li><strong>Indirect Costs (15%):</strong> ${currencySymbol()}${fmt(indirectCost)}</li>`;
-        estimate += `<li><strong>Contingency (10%):</strong> ${currencySymbol()}${fmt(contingency)}</li>`;
-        estimate += `<li><strong>Grand Total:</strong> ${currencySymbol()}${fmt(totalCost)}</li></ul>`;
-        estimate += `Assumptions: ${projectHistory.materials} materials, ${projectHistory.location} labor rates. For precision, specify site conditions or material grades.`;
-        return estimate;
-      }
-
-      function updateEstimate(message) {
-        if (message.toLowerCase().includes("premium")) projectHistory.materials = "Premium";
-        return generateCostEstimate() + " Updated with " + projectHistory.materials + " materials.";
-      }
-
-      function openGrokChat() {
-        try {
-          const query = encodeURIComponent(JSON.stringify(projectHistory));
-          window.open(`https://www.grok.com/?q=Provide%20construction%20cost%20estimate%20for%20${query}`, '_blank');
-          chatPopup.classList.remove("active");
-        } catch (error) {
-          alert("Failed to open full AI chat. Please visit https://www.grok.com/ manually.");
-          console.error("Grok chat error:", error);
-        }
-      }
-
-      // Close chat on click outside
-      document.addEventListener("click", (e) => {
-        if (!chatPopup.contains(e.target) && e.target !== $("#openChatBtn")) {
-          chatPopup.classList.remove("active");
-        }
-      });
     })();
   </script>
 </body>
