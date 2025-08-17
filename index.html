@@ -53,6 +53,9 @@
     #chatContent { padding: 10px; height: calc(100% - 90px); overflow-y: auto; }
     #chatInput { width: calc(100% - 110px); padding: 5px; margin-top: 5px; border: 1px solid var(--border); border-radius: 4px; }
     #chatFooter { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 5px; align-items: center; }
+    #priceModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+    #priceModalContent { background: white; margin: 10% auto; padding: 20px; width: 80%; max-width: 500px; border-radius: 8px; }
+    #priceModal button { margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -83,7 +86,7 @@
     </div>
     <div style="margin-top: 20px;">
       <button class="btn" onclick="exportToXLSX()">Export to XLSX</button>
-      <button class="btn" onclick="showPrices()">Suggest Material Prices</button> <!-- Restored as per original -->
+      <button class="btn" onclick="showPrices()">Suggest Material Prices</button>
       <button class="btn" id="openChatBtn">Open TantyBot Chat</button>
     </div>
 
@@ -94,8 +97,16 @@
       </div>
       <div id="chatFooter">
         <input type="text" id="chatInput" placeholder="Type your question or details...">
-        <button class="btn" onclick="sendMessage()">Send</button>
+        <button class="btn" id="sendBtn">Send</button>
         <button class="btn secondary" onclick="openGrokChat()">Full AI Chat</button>
+      </div>
+    </div>
+
+    <div id="priceModal">
+      <div id="priceModalContent">
+        <h3>Material Price Suggestions (Q2 2025 or Latest)</h3>
+        <p id="priceData">Loading prices...</p>
+        <button class="btn" onclick="closePrices()">Close</button>
       </div>
     </div>
   </div>
@@ -218,6 +229,7 @@
       const chatPopup = $("#chatPopup");
       const chatContent = $("#chatContent");
       const chatInput = $("#chatInput");
+      const sendBtn = $("#sendBtn");
 
       function fmt(n, dec = 2) {
         return Number(n).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
@@ -391,7 +403,7 @@
         console.log("Export to XLSX completed");
       };
 
-      // Material Price Suggestions (Restored from original)
+      // Material Price Suggestions
       const priceFallback = {
         "Civil-Structural Works": {
           "Concrete (cu.m)": 96,
@@ -414,39 +426,31 @@
       };
 
       window.showPrices = function() {
-        let priceModal = document.createElement("div");
-        priceModal.id = "priceModal";
+        let priceModal = $("#priceModal");
+        if (!priceModal) {
+          priceModal = document.createElement("div");
+          priceModal.id = "priceModal";
+          const priceModalContent = document.createElement("div");
+          priceModalContent.id = "priceModalContent";
+          priceModalContent.innerHTML = `
+            <h3>Material Price Suggestions (Q2 2025 or Latest)</h3>
+            <p id="priceData">Loading prices...</p>
+            <button class="btn" onclick="closePrices()">Close</button>
+          `;
+          priceModal.appendChild(priceModalContent);
+          document.body.appendChild(priceModal);
+        }
         priceModal.style.display = "block";
-        priceModal.style.position = "fixed";
-        priceModal.style.top = "0";
-        priceModal.style.left = "0";
-        priceModal.style.width = "100%";
-        priceModal.style.height = "100%";
-        priceModal.style.background = "rgba(0,0,0,0.5)";
-        let priceModalContent = document.createElement("div");
-        priceModalContent.id = "priceModalContent";
-        priceModalContent.style.background = "white";
-        priceModalContent.style.margin = "10% auto";
-        priceModalContent.style.padding = "20px";
-        priceModalContent.style.width = "80%";
-        priceModalContent.style.maxWidth = "500px";
-        priceModalContent.style.borderRadius = "8px";
-        let priceData = document.createElement("p");
-        priceData.id = "priceData";
-        priceData.innerHTML = "Loading prices...";
-        let closeBtn = document.createElement("button");
-        closeBtn.className = "btn";
-        closeBtn.textContent = "Close";
-        closeBtn.onclick = function() { priceModal.remove(); };
-        priceModalContent.appendChild(document.createElement("h3")).textContent = "Material Price Suggestions (Q2 2025 or Latest)";
-        priceModalContent.appendChild(priceData);
-        priceModalContent.appendChild(closeBtn);
-        priceModal.appendChild(priceModalContent);
-        document.body.appendChild(priceModal);
+        const priceData = $("#priceData");
         const content = Object.entries(priceFallback).map(([discipline, prices]) => 
           `${discipline}: ${Object.entries(prices).map(([item, price]) => `${item}: ${currencySymbol()}${fmt(price, decPlaces())}`).join(", ")}`
         ).join("<br>");
         priceData.innerHTML = content || "No price data available. Check back later for updates.";
+      };
+
+      window.closePrices = function() {
+        const priceModal = $("#priceModal");
+        if (priceModal) priceModal.style.display = "none";
       };
 
       // TantyBot Chat Functionality
@@ -487,6 +491,8 @@
       function stopDragging() {
         isDragging = false;
       }
+
+      sendBtn.addEventListener("click", sendMessage); // Explicitly attach event listener
 
       function sendMessage() {
         const message = chatInput.value.trim();
