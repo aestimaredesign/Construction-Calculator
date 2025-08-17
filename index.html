@@ -77,6 +77,7 @@
     </div>
     <div style="margin-top: 20px;">
       <button class="btn" onclick="exportToXLSX()">Export to XLSX</button>
+      <button class="btn" onclick="askAI()">Ask AI for Estimates</button>
     </div>
   </div>
 
@@ -368,7 +369,23 @@
         console.log("Export to XLSX completed");
       };
 
-      recalc();
+      // Ask AI for Estimates
+      window.askAI = function() {
+        const data = {};
+        $$(".panel").forEach(panel => {
+          const discipline = panel.dataset.discipline;
+          data[discipline] = $$("tbody tr", panel).map(tr => {
+            const scope = $$("input", tr)[0].value || "N/A";
+            const qty = parseFloat($$("input", tr)[1].value) || 0;
+            const unit = $$("select", tr)[0].value || "N/A";
+            const ucm = parseFloat($$("input", tr)[2].value) || 0;
+            const ucl = parseFloat($$("input", tr)[3].value) || 0;
+            return { scope, qty, unit, ucm, ucl };
+          });
+        });
+        const query = encodeURIComponent(JSON.stringify(data));
+        window.open(`https://www.grok.com/?q=Provide%20construction%20estimating%20advice%20for%20${query}%20using%20current%20formulas,%20units,%20and%20approximate%20worldwide%20material%20prices%20as%20of%20August%202025`, '_blank');
+      };
     })();
   </script>
 </body>
