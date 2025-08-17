@@ -76,20 +76,11 @@
       <div class="amount"><span id="grandSymbol">₱</span><span id="grandTotal">0.00</span></div>
     </div>
     <div style="margin-top: 20px;">
-      <button class="btn" onclick="exportToCSV()">Export to CSV</button>
-      <button class="btn" onclick="exportToPDF()">Export to PDF</button>
       <button class="btn" onclick="exportToXLSX()">Export to XLSX</button>
     </div>
   </div>
 
-  <script>
-    // Load jsPDF with fallback
-    if (typeof window.jspdf === 'undefined') {
-      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.3/jspdf.umd.min.js"><\/script>');
-    }
-    // Load SheetJS for XLSX export
-    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>');
-  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script>
     (function () {
       // ----- Data: realistic scopes per discipline -----
@@ -346,97 +337,7 @@
         recalc();
       });
 
-      // CSV Export
-      window.exportToCSV = function() {
-        const csv = ["Discipline,Scope of Work,Quantity,Unit,Unit Cost (Material),Unit Cost (Labor),Material Cost,Labor Cost,Total"];
-        $$(".panel").forEach(panel => {
-          const discipline = panel.dataset.discipline;
-          $$("tbody tr", panel).forEach(tr => {
-            const scope = $$("input", tr)[0].value;
-            const qty = parseFloat($$("input", tr)[1].value) || 0;
-            const unit = $$("select", tr)[0].value;
-            const ucm = parseFloat($$("input", tr)[2].value) || 0;
-            const ucl = parseFloat($$("input", tr)[3].value) || 0;
-            const mat = qty * ucm;
-            const lab = qty * ucl;
-            const tot = mat + lab;
-            csv.push([
-              discipline,
-              `"${scope.replace(/"/g, '""')}"`,
-              qty,
-              unit,
-              ucm.toFixed(decPlaces()),
-              ucl.toFixed(decPlaces()),
-              mat.toFixed(decPlaces()),
-              lab.toFixed(decPlaces()),
-              tot.toFixed(decPlaces())
-            ].join(","));
-          });
-        });
-        const blob = new Blob([csv.join("\n")], { type: "text/csv" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `construction_estimate_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-      };
-
-      // PDF Export
-      window.exportToPDF = function() {
-        console.log("Export to PDF started");
-        if (typeof window.jspdf === 'undefined') {
-          console.error("jsPDF not loaded");
-          alert("PDF export failed: jsPDF library not available.");
-          return;
-        }
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        let yOffset = 10;
-        $$(".panel").forEach((panel, index) => {
-          if (index > 0) doc.addPage();
-          const discipline = panel.dataset.discipline;
-          doc.setFontSize(16);
-          doc.text(discipline, 10, yOffset);
-          yOffset += 10;
-
-          const rows = [];
-          $$("tbody tr", panel).forEach(tr => {
-            const scope = $$("input", tr)[0].value || "N/A";
-            const qty = parseFloat($$("input", tr)[1].value) || 0;
-            const unit = $$("select", tr)[0].value || "N/A";
-            const ucm = parseFloat($$("input", tr)[2].value) || 0;
-            const ucl = parseFloat($$("input", tr)[3].value) || 0;
-            const mat = qty * ucm;
-            const lab = qty * ucl;
-            const tot = mat + lab;
-            rows.push([scope, qty, unit, ucm.toFixed(decPlaces()), ucl.toFixed(decPlaces()), mat.toFixed(decPlaces()), lab.toFixed(decPlaces()), tot.toFixed(decPlaces())]);
-          });
-
-          doc.autoTable({
-            head: [["Scope of Work", "Qty", "Unit", "Unit Cost (Mat)", "Unit Cost (Lab)", "Material Cost", "Labor Cost", "Total"]],
-            body: rows.length ? rows : [["No data", "", "", "", "", "", "", ""]],
-            startY: yOffset,
-            theme: "grid",
-            styles: { fontSize: 8, cellPadding: 2 },
-            columnStyles: { 0: { cellWidth: 50 } }
-          });
-
-          yOffset = doc.lastAutoTable.finalY + 10;
-          const discTotal = parseFloat(panel.querySelector(".discTotal").textContent) || 0;
-          doc.setFontSize(12);
-          doc.text(`Total for ${discipline}: ${currencySymbol()}${fmt(discTotal, decPlaces())}`, 10, yOffset);
-          yOffset += 10;
-        });
-
-        const grand = parseFloat(grandTotalEl.textContent) || 0;
-        doc.setFontSize(14);
-        doc.text(`Grand Total: ${currencySymbol()}${fmt(grand, decPlaces())}`, 10, yOffset + 10);
-        doc.save(`construction_estimate_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}.pdf`);
-        console.log("Export to PDF completed");
-      };
-
-      // XLSX Export
+      // XLSX Export with Multiple Tabs
       window.exportToXLSX = function() {
         console.log("Export to XLSX started");
         if (typeof XLSX === 'undefined') {
