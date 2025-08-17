@@ -1,482 +1,559 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Construction Estimating Calculator</title>
-  <style>
-    :root {
-      --border: #d0d7de;
-      --muted: #f6f8fa;
-      --ink: #0f172a;
-      --ink-soft: #475569;
-      --brand: #2563eb;
-    }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--ink); margin: 0; }
-    .calc-wrap { max-width: 1200px; margin: 0 auto; padding: 12px; }
-    .header {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
-      justify-content: space-between; margin-bottom: 12px;
-    }
-    .title { font-size: 1.4rem; font-weight: 700; }
-    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    select, button {
-      border: 1px solid var(--border); background: white; padding: 6px 10px; border-radius: 8px; font-size: 14px;
-    }
-    .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
-    .tab {
-      border: 1px solid var(--border); padding: 8px 10px; border-radius: 10px; background: var(--muted);
-      cursor: pointer; font-size: 14px; user-select: none;
-    }
-    .tab.active { background: #e5efff; border-color: #b6ccff; color: #0b3aa3; font-weight: 700; }
-    .panel { display: none; border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
-    .panel.active { display: block; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { border: 1px solid var(--border); padding: 6px 8px; vertical-align: middle; }
-    th { background: var(--muted); text-align: left; font-weight: 700; }
-    td input[type="number"], td input[type="text"] {
-      width: 100%; box-sizing: border-box; padding: 6px; border-radius: 6px; border: 1px solid var(--border);
-    }
-    td select { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
-    .row-total, .mat-cost, .lab-cost { text-align: right; white-space: nowrap; }
-    .panel-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 10px; }
-    .btn { background: var(--brand); color: white; border: 1px solid var(--brand); padding: 8px 12px; border-radius: 10px; cursor: pointer; }
-    .btn.secondary { background: white; color: var(--ink); border: 1px solid var(--border); }
-    .discipline-total { font-weight: 700; }
-    .grand { margin-top: 14px; padding: 12px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; }
-    .grand .label { color: #9a3412; font-weight: 700; }
-    .grand .amount { font-weight: 800; font-size: 1.1rem; }
-    .hint { color: var(--ink-soft); font-size: 12px; }
-    #chatPopup { display: none; position: fixed; bottom: 20px; right: 20px; width: 300px; height: 400px; background: white; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; }
-    #chatPopup.active { display: block; }
-    #chatHeader { background: var(--brand); color: white; padding: 10px; text-align: center; cursor: move; }
-    #chatContent { padding: 10px; height: calc(100% - 80px); overflow-y: auto; }
-    #chatInput { width: 100%; padding: 5px; margin-top: 5px; border: 1px solid var(--border); border-radius: 4px; }
-    #chatFooter { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 5px; }
-  </style>
+ <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+ <title>Construction Estimating Calculator with TantyBot</title>
+ <style>
+ :root {
+ --border: #d0d7de;
+ --muted: #f6f8fa;
+ --ink: #0f172a;
+ --ink-soft: #475569;
+ --brand: #2563eb;
+ }
+ body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; color: var(--ink); margin: 0; }
+ .calc-wrap { max-width: 1200px; margin: 0 auto; padding: 12px; }
+ .header {
+ display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+ justify-content: space-between; margin-bottom: 12px;
+ }
+ .title { font-size: 1.4rem; font-weight: 700; }
+ .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+ select, button {
+ border: 1px solid var(--border); background: white; padding: 6px 10px; border-radius: 8px; font-size: 14px;
+ }
+ .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
+ .tab {
+ border: 1px solid var(--border); padding: 8px 10px; border-radius: 10px; background: var(--muted);
+ cursor: pointer; font-size: 14px; user-select: none;
+ }
+ .tab.active { background: #e5efff; border-color: #b6ccff; color: #0b3aa3; font-weight: 700; }
+ .panel { display: none; border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+ .panel.active { display: block; }
+ table { width: 100%; border-collapse: collapse; font-size: 14px; }
+ th, td { border: 1px solid var(--border); padding: 6px 8px; vertical-align: middle; }
+ th { background: var(--muted); text-align: left; font-weight: 700; }
+ td input[type="number"], td input[type="text"] {
+ width: 100%; box-sizing: border-box; padding: 6px; border-radius: 6px; border: 1px solid var(--border);
+ }
+ td select { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid var(--border); }
+ .row-total, .mat-cost, .lab-cost { text-align: right; white-space: nowrap; }
+ .panel-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin -top: 10px; }
+ .btn { background: var(--brand); color: white; border: 1px solid var(--brand); padding: 8px 12px; border-radius: 10px; cursor: pointer; }
+ .btn.secondary { background: white; color: var(--ink); border: 1px solid var(--border); }
+ .discipline-total { font-weight: 700; }
+ .grand { margin-top: 14px; padding: 12px; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; }
+ .grand .label { color: #9a3412; font-weight: 700; }
+ .grand .amount { font-weight: 800; font-size: 1.1rem; }
+ .hint { color: var(--ink-soft); font-size: 12px; }
+ #chatPopup { display: none; position: fixed; bottom: 20px; right: 20px; width: 350px; height: 450px; background: white; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 1000; }
+ #chatPopup.active { display: block; }
+ #chatHeader { background: var(--brand); color: white; padding: 10px; text-align: center; cursor: move; }
+ #chatContent { padding: 10px; height: calc(100% - 90px); overflow-y: auto; }
+ #chatInput { width: calc(100% - 110px); padding: 5px; margin-top: 5px; border: 1px solid var(--border); border-radius: 4px; }
+ #chatFooter { padding: 10px; border-top: 1px solid var(--border); display: flex; gap: 5px; align-items: center; }
+ #canvasPanel { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 400px; background: white; border: 1px solid var(--border); border-radius: 8px; padding: 20px; z-index: 2000; overflow: auto; }
+ #canvasPanel.active { display: block; }
+ #canvasContent { height: 100%; }
+ </style>
 </head>
 <body>
-  <div class="calc-wrap" id="calcRoot">
-    <div class="header">
-      <div class="title">Construction Estimating Calculator</div>
-      <div class="controls">
-        <label for="currencySel" class="hint">Currency:</label>
-        <select id="currencySel" aria-label="Currency">
-          <option value="PHP" selected>PHP – Philippine Peso (₱)</option>
-          <option value="USD">USD – US Dollar ($)</option>
-          <option value="EUR">EUR – Euro (€)</option>
-          <option value="SGD">SGD – Singapore Dollar (S$)</option>
-          <option value="AUD">AUD – Australian Dollar (A$)</option>
-          <option value="JPY">JPY – Japanese Yen (¥)</option>
-          <option value="GBP">GBP – British Pound (£)</option>
-        </select>
-        <span class="hint">Enter Qty + Unit Costs (Material & Labor). Totals auto-calculate.</span>
-      </div>
-    </div>
+ <div class="calc-wrap" id="calcRoot">
+ <div class="header">
+ <div class="title">Construction Estimating Calculator with TantyBot</div>
+ <div class="controls">
+ <label for="currencySel" class="hint">Currency:</label>
+ <select id="currencySel" aria-label="Currency">
+ <option value="PHP" selected>PHP – Philippine Peso (₱)</option>
+ <option value="USD">USD – US Dollar ($)</option>
+ <option value="EUR">EUR – Euro (€)</option>
+ <option value="SGD">SGD – Singapore Dollar (S$)</option>
+ <option value="AUD">AUD – Australian Dollar (A$)</option>
+ <option value="JPY">JPY – Japanese Yen (¥)</option>
+ <option value="GBP">GBP – British Pound (£)</option>
+ </select>
+ <span class="hint">Enter Qty + Unit Costs (Material & Labor). Totals auto-calculate.</span>
+ </div>
+ </div>
 
-    <div class="tabs" id="tabs"></div>
-    <div id="panels"></div>
+ <div class="tabs" id="tabs"></div>
+ <div id="panels"></div>
 
-    <div class="grand" role="status" aria-live="polite">
-      <div class="label">Grand Total</div>
-      <div class="amount"><span id="grandSymbol">₱</span><span id="grandTotal">0.00</span></div>
-    </div>
-    <div style="margin-top: 20px;">
-      <button class="btn" onclick="exportToXLSX()">Export to XLSX</button>
-      <button class="btn" id="openChatBtn">Open AI Chat</button>
-    </div>
+ <div class="grand" role="status" aria-live="polite">
+ <div class="label">Grand Total</div>
+ <div class="amount"><span id="grandSymbol">₱</span><span id="grandTotal">0.00</span></div>
+ </div>
+ <div style="margin-top: 20px;">
+ <button class="btn" onclick="exportToXLSX()">Export to XLSX</button>
+ <button class="btn" id="openChatBtn">Open TantyBot Chat</button>
+ </div>
 
-    <div id="chatPopup">
-      <div id="chatHeader">AI Assistant</div>
-      <div id="chatContent">
-        <p><strong>AI:</strong> Hello! I’m here to help with your estimating questions. Try asking about formulas, units, or anything else!</p>
-      </div>
-      <div id="chatFooter">
-        <input type="text" id="chatInput" placeholder="Type your question...">
-        <button class="btn" onclick="sendMessage()">Send</button>
-        <button class="btn secondary" onclick="openGrokChat()">Full AI Chat</button>
-      </div>
-    </div>
-  </div>
+ <div id="chatPopup">
+ <div id="chatHeader">TantyBot</div>
+ <div id="chatContent">
+ <p><strong>TantyBot:</strong> Hello! I’m TantyBot, your expert in construction cost estimating. Please provide project details (e.g., location, square footage, materials) or ask a question!</p>
+ </div>
+ <div id="chatFooter">
+ <input type="text" id="chatInput" placeholder="Type your question or details...">
+ <button class="btn" onclick ="sendMessage()">Send</button>
+ <button class="btn secondary" onclick="openFullChat()">Full AI Chat</button>
+ </div>
+ </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script>
-    (function () {
-      // ----- Data: realistic scopes per discipline -----
-      const scopes = {
-        "Civil-Structural Works": [
-          { name: "Site Clearing & Grubbing", unit: "sq.m" },
-          { name: "Excavation", unit: "cu.m" },
-          { name: "Hauling of Excavated Materials", unit: "cu.m" },
-          { name: "Backfilling & Compaction", unit: "cu.m" },
-          { name: "Grading & Leveling", unit: "sq.m" },
-          { name: "Formwork & Scaffolding", unit: "sq.m" },
-          { name: "Rebar Fabrication & Installation", unit: "kg" },
-          { name: "Concrete Pouring – Foundations", unit: "cu.m" },
-          { name: "Concrete Pouring – Columns/Beams/Slabs", unit: "cu.m" },
-          { name: "Masonry Wall Construction", unit: "sq.m" },
-          { name: "Lintel/Sill Beams", unit: "linear m" },
-          { name: "Perimeter Fence / Retaining Wall", unit: "linear m" },
-          { name: "Drainage & Culverts", unit: "linear m" },
-          { name: "Septic Tank Construction", unit: "cu.m" }
-        ],
-        "Architectural Works": [
-          { name: "Wall Plastering – Interior", unit: "sq.m" },
-          { name: "Wall Plastering – Exterior", unit: "sq.m" },
-          { name: "Floor Screeding / Leveling", unit: "sq.m" },
-          { name: "Floor Tiling – Ceramic", unit: "sq.m" },
-          { name: "Wall Tiling – Ceramic", unit: "sq.m" },
-          { name: "Ceiling – Gypsum Board", unit: "sq.m" },
-          { name: "Ceiling – PVC / Metal", unit: "sq.m" },
-          { name: "Painting – Interior Walls", unit: "sq.m" },
-          { name: "Painting – Exterior Walls", unit: "sq.m" },
-          { name: "Door Installation – Wood", unit: "unit" },
-          { name: "Window Installation – Aluminum/Glass", unit: "unit" },
-          { name: "Partition – Gypsum Board", unit: "sq.m" },
-          { name: "Cabinetry & Millwork", unit: "unit" },
-          { name: "Waterproofing – Wet Areas", unit: "sq.m" }
-        ],
-        "Plumbing and Sanitary Works": [
-          { name: "Cold Waterline – PPR/PEX/PVC", unit: "linear m" },
-          { name: "Hot Waterline – PPR/PEX", unit: "linear m" },
-          { name: "Sewer Line – uPVC", unit: "linear m" },
-          { name: "Storm Drain Line", unit: "linear m" },
-          { name: "Lavatory Installation", unit: "unit" },
-          { name: "Water Closet Installation", unit: "unit" },
-          { name: "Kitchen Sink Installation", unit: "unit" },
-          { name: "Floor Drain Installation", unit: "unit" },
-          { name: "Water Tank Installation", unit: "unit" },
-          { name: "Grease Trap Installation", unit: "unit" },
-          { name: "Septic Tank Installation", unit: "unit" }
-        ],
-        "Electrical Works": [
-          { name: "Main Panel / Subpanel Installation", unit: "unit" },
-          { name: "Conduit Laying – PVC/EMT", unit: "linear m" },
-          { name: "Wiring & Cabling – Power", unit: "linear m" },
-          { name: "Wiring & Cabling – Lighting", unit: "linear m" },
-          { name: "Lighting Fixtures – LED", unit: "unit" },
-          { name: "Power Outlets", unit: "unit" },
-          { name: "Light Switches", unit: "unit" },
-          { name: "Circuit Breakers", unit: "unit" },
-          { name: "Grounding & Earthing", unit: "lump sum" },
-          { name: "Testing & Commissioning", unit: "lump sum" }
-        ],
-        "Auxiliary Works": [
-          { name: "CCTV – Cameras", unit: "unit" },
-          { name: "CCTV – NVR/DVR", unit: "unit" },
-          { name: "Fire Alarm Control Panel", unit: "unit" },
-          { name: "Fire Alarm Device Wiring", unit: "linear m" },
-          { name: "Data Cabling – Cat5e/Cat6", unit: "linear m" },
-          { name: "Telephone Cabling", unit: "linear m" },
-          { name: "Access Control System", unit: "unit" },
-          { name: "PA/BGM Speakers", unit: "unit" },
-          { name: "Intercom System", unit: "unit" },
-          { name: "Wi-Fi Access Points", unit: "unit" }
-        ],
-        "Fire Protection Works": [
-          { name: "Sprinkler – Main Piping", unit: "linear m" },
-          { name: "Sprinkler Heads Installation", unit: "unit" },
-          { name: "Standpipe / Hydrant Piping", unit: "linear m" },
-          { name: "Fire Hose Cabinet", unit: "unit" },
-          { name: "Fire Extinguishers", unit: "unit" },
-          { name: "Smoke / Heat Detectors", unit: "unit" },
-          { name: "Fire Pump Set", unit: "unit" },
-          { name: "Testing & Commissioning", unit: "lump sum" }
-        ],
-        "Mechanical Works": [
-          { name: "HVAC Ducting – Fabrication", unit: "sq.m" },
-          { name: "HVAC Ducting – Installation", unit: "linear m" },
-          { name: "Split Type AC Installation", unit: "unit" },
-          { name: "Package/VRF System Installation", unit: "unit" },
-          { name: "Exhaust/Ventilation Fans", unit: "unit" },
-          { name: "Chilled Water Piping", unit: "linear m" },
-          { name: "Air Balancing & Testing", unit: "lump sum" }
-        ]
-      };
+ <div id="canvasPanel">
+ <div id="canvasHeader">Canvas Panel</div>
+ <div id="canvasContent"></div>
+ <button class="btn secondary" onclick="closeCanvas()">Close</button>
+ </div>
+ </div>
 
-      // ----- Currency symbols & formatting -----
-      const currencyMap = {
-        PHP: { symbol: "₱", dec: 2 },
-        USD: { symbol: "$", dec: 2 },
-        EUR: { symbol: "€", dec: 2 },
-        SGD: { symbol: "S$", dec: 2 },
-        AUD: { symbol: "A$", dec: 2 },
-        JPY: { symbol: "¥", dec: 0 },
-        GBP: { symbol: "£", dec: 2 }
-      };
-      let currentCurrency = "PHP";
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+ <script>
+ (function () {
+ // ----- Data: realistic scopes per discipline -----
+ const scopes = {
+ "Civil-Structural Works": [
+ { name: "Site Clearing & Grubbing", unit: "sq.m" },
+ { name: "Excavation", unit: "cu.m" },
+ { name: "Hauling of Excavated Materials", unit: "cu.m" },
+ { name: "Backfilling & Compaction", unit: "cu.m" },
+ { name: "Grading & Leveling", unit: "sq.m" },
+ { name: "Formwork & Scaffolding", unit: "sq.m" },
+ { name: "Rebar Fabrication & Installation", unit: "kg" },
+ { name: "Concrete Pouring – Foundations", unit: "cu.m" },
+ { name: "Concrete Pouring – Columns/Beams/Slabs", unit: "cu.m" },
+ { name: "Masonry Wall Construction", unit: "sq.m" },
+ { name: "Lintel/Sill Beams", unit: "linear m" },
+ { name: "Perimeter Fence / Retaining Wall", unit: "linear m" },
+ { name: "Drainage & Culverts", unit: "linear m" },
+ { name: "Septic Tank Construction", unit: "cu.m" }
+ ],
+ "Architectural Works": [
+ { name: "Wall Plastering – Interior", unit: "sq.m" },
+ { name: "Wall Plastering – Exterior", unit: "sq.m" },
+ { name: "Floor Screeding / Leveling", unit: "sq.m" },
+ { name: "Floor Tiling – Ceramic", unit: "sq.m" },
+ { name: "Wall Tiling – Ceramic", unit: "sq.m" },
+ { name: "Ceiling – Gypsum Board", unit: "sq.m" },
+ { name: "Ceiling – PVC / Metal", unit: "sq.m" },
+ { name: "Painting – Interior Walls", unit: "sq.m" },
+ { name: "Painting – Exterior Walls", unit: "sq.m" },
+ { name: "Door Installation – Wood", unit: "unit" },
+ { name: "Window Installation – Aluminum/Glass", unit: "unit" },
+ { name: "Partition – Gypsum Board", unit: "sq.m" },
+ { name: "Cabinetry & Millwork", unit: "unit" },
+ { name: "Waterproofing – Wet Areas", unit: "sq.m" }
+ ],
+ "Plumbing and Sanitary Works": [
+ { name: "Cold Waterline – PPR/PEX/PVC", unit: "linear m" },
+ { name: "Hot Waterline – PPR/PEX", unit: "linear m" },
+ { name: "Sewer Line – uPVC", unit: "linear m" },
+ { name: "Storm Drain Line", unit: "linear m" },
+ { name: "Lavatory Installation", unit: "unit" },
+ { name: "Water Clos et Installation", unit: "unit" },
+ { name: "Kitchen Sink Installation", unit: "unit" },
+ { name: "Floor Drain Installation", unit: "unit" },
+ { name: "Water Tank Installation", unit: "unit" },
+ { name: "Grease Trap Installation", unit: "unit" },
+ { name: "Septic Tank Installation", unit: "unit" }
+ ],
+ "Electrical Works": [
+ { name: "Main Panel / Subpanel Installation", unit: "unit" },
+ { name: "Conduit Laying – PVC/EMT", unit: "linear m" },
+ { name: "Wiring & Cabling – Power", unit: "linear m" },
+ { name: "Wiring & Cabling – Lighting", unit: "linear m" },
+ { name: "Lighting Fixtures – LED", unit: "unit" },
+ { name: "Power Outlets", unit: "unit" },
+ { name: "Light Switches", unit: "unit" },
+ { name: "Circuit Breakers", unit: "unit" },
+ { name: "Grounding & Earthing", unit: "lump sum" },
+ { name: "Testing & Commissioning", unit: "lump sum" }
+ ],
+ "Auxiliary Works": [
+ { name: "CCTV – Cameras", unit: "unit" },
+ { name: "CCTV – NVR/DVR", unit: "unit" },
+ { name: "Fire Alarm Control Panel", unit: "unit" },
+ { name: "Fire Alarm Device Wiring", unit: "linear m" },
+ { name: "Data Cabling – Cat5e/Cat6", unit: "linear m" },
+ { name: "Telephone Cabling", unit: "linear m" },
+ { name: "Access Control System", unit: "unit" },
+ { name: "PA/BGM Speakers", unit: "unit" },
+ { name: "Intercom System", unit: "unit" },
+ { name: "Wi-Fi Access Points", unit: "unit" }
+ ],
+ "Fire Protection Works": [
+ { name: "Sprinkler – Main Piping", unit: "linear m" },
+ { name: "Sprinkler Heads Installation", unit: "unit" },
+ { name: "Standpipe / Hydrant Piping", unit: "linear m" },
+ { name: "Fire Hose Cabinet", unit: "unit" },
+ { name: "Fire Extinguishers", unit: "unit" },
+ { name: "Smoke / Heat Detectors", unit: "unit" },
+ { name: "Fire Pump Set", unit: "unit" },
+ { name: "Testing & Commissioning", unit: "lump sum" }
+ ],
+ "Mechanical Works": [
+ { name: "HVAC Ducting – Fabrication", unit: "sq.m" },
+ { name: "HVAC Ducting – Installation", unit: "linear m" },
+ { name: "Split Type AC Installation", unit: "unit" },
+ { name: "Package/VRF System Installation", unit: "unit" },
+ { name: "Exhaust/Ventilation Fans", unit: "unit" },
+ { name: "Chilled Water Piping", unit: "linear m" },
+ { name: "Air Balancing & Testing", unit: "lump sum" }
+ ]
+ };
 
-      const $ = (sel, ctx = document) => ctx.querySelector(sel);
-      const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
+ // ----- Currency symbols & formatting -----
+ const currencyMap = {
+ PHP: { symbol: "₱", dec: 2 },
+ USD: { symbol: "$", dec: 2 },
+ EUR: { symbol: "€", dec: 2 },
+ SGD: { symbol: "S$", dec: 2 },
+ AUD: { symbol: "A$", dec: 2 },
+ JPY: { symbol: "¥", dec: 0 },
+ GBP: { symbol: "£", dec: 2 }
+ };
+ let currentCurrency = "PHP";
+ let projectData = { location: "", squareFootage: 0, materials: "", trades: {} };
 
-      const tabsEl = $("#tabs");
-      const panelsEl = $("#panels");
-      const grandTotalEl = $("#grandTotal");
-      const grandSymbolEl = $("#grandSymbol");
-      const currencySel = $("#currencySel");
-      const chatPopup = $("#chatPopup");
-      const chatContent = $("#chatContent");
-      const chatInput = $("#chatInput");
-      const openChatBtn = $("#openChatBtn");
+ const $ = (sel, ctx = document) => ctx.querySelector(sel);
+ const $$ = (sel, ctx = document) => Array.from(ctx.querySelectorAll(sel));
 
-      function fmt(n, dec = 2) {
-        return Number(n).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
-      }
+ const tabsEl = $("#tabs");
+ const panelsEl = $("#panels");
+ const grandTotalEl = $("#grandTotal");
+ const grandSymbolEl = $("#grandSymbol");
+ const currencySel = $("#currencySel");
+ const chatPopup = $("#chatPopup");
+ const chatContent = $("#chatContent");
+ const chatInput = $("#chatInput");
+ const openChatBtn = $("#openChatBtn");
+ const canvasPanel = $("#canvasPanel");
+ const canvasContent = $("#canvasContent");
 
-      function currencySymbol() {
-        return currencyMap[currentCurrency].symbol;
-      }
+ function fmt(n, dec = 2) {
+ return Number(n).toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
+ }
 
-      function decPlaces() {
-        return currencyMap[currentCurrency].dec;
-      }
+ function currencySymbol() {
+ return currencyMap[currentCurrency].symbol;
+ }
 
-      // Create a table element for a discipline
-      function createTable(dName, rows) {
-        const panel = document.createElement("div");
-        panel.className = "panel";
-        panel.dataset.discipline = dName;
+ function decPlaces() {
+ return currencyMap[currentCurrency].dec;
+ }
 
-        const table = document.createElement("table");
-        table.innerHTML = `
-          <thead>
-            <tr>
-              <th style="min-width:260px">Scope of Work</th>
-              <th style="width:110px">Qty</th>
-              <th style="width:100px">Unit</th>
-              <th style="width:160px">Unit Cost (Material)</th>
-              <th style="width:160px">Unit Cost (Labor)</th>
-              <th style="width:140px">Material Cost</th>
-              <th style="width:140px">Labor Cost</th>
-              <th style="width:140px">Total</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        `;
-        const tbody = table.querySelector("tbody");
+ // Create a table element for a discipline
+ function createTable(dName, rows) {
+ const panel = document.createElement("div");
+ panel.className = "panel";
+ panel.dataset.discipline = dName;
 
-        // Seed rows
-        rows.forEach(scope => tbody.appendChild(makeRow(scope.name, scope.unit)));
+ const table = document.createElement("table");
+ table.innerHTML = `
+ <thead>
+ <tr>
+ <th style="min-width:260px">Scope of Work</th>
+ <th style="width:110px">Qty</th>
+ <th style="width:100px">Unit</th>
+ <th style="width:160px">Unit Cost (Material)</th>
+ <th style="width:160px">Unit Cost (Labor)</th>
+ <th style="width:140px">Material Cost</th>
+ <th style="width:140px">Labor Cost</th>
+ <th style="width:140px">Total</th>
+ </tr>
+ </thead>
+ <tbody></ tbody>
+ `;
+ const tbody = table.querySelector("tbody");
 
-        const addBtn = document.createElement("button");
-        addBtn.className = "btn secondary";
-        addBtn.type = "button";
-        addBtn.textContent = "+ Add Scope";
-        addBtn.addEventListener("click", () => {
-          tbody.appendChild(makeRow("New Scope", "unit"));
-          recalc();
-        });
+ // Seed rows
+ rows.forEach(scope => tbody.appendChild(makeRow(scope.name, scope.unit)));
 
-        const totalBox = document.createElement("div");
-        totalBox.className = "discipline-total";
-        totalBox.innerHTML = `Total for <span>${dName}</span>: <span class="discSymbol">${currencySymbol()}</span><span class="discTotal">0.00</span>`;
+ const addBtn = document.createElement("button");
+ addBtn.className = "btn secondary";
+ addBtn.type = "button";
+ addBtn.textContent = "+ Add Scope";
+ addBtn.addEventListener("click", () => {
+ tbody.appendChild(makeRow("New Scope", "unit"));
+ recalc();
+ updateProjectData();
+ });
 
-        const foot = document.createElement("div");
-        foot.className = "panel-footer";
-        foot.appendChild(addBtn);
-        foot.appendChild(totalBox);
+ const totalBox = document.createElement("div");
+ totalBox.className = "discipline-total";
+ totalBox.innerHTML = `Total for <span>${dName}</span>: <span class="discSymbol">${currencySymbol()}</span><span class="discTotal">0.00</span>`;
 
-        panel.appendChild(table);
-        panel.appendChild(foot);
-        return panel;
-      }
+ const foot = document.createElement("div");
+ foot.className = "panel-footer";
+ foot.appendChild(addBtn);
+ foot.appendChild(totalBox);
 
-      function makeRow(scopeText, unit) {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><input type="text" value="${escapeHtml(scopeText)}" /></td>
-          <td><input type="number" min="0" step="any" inputmode="decimal" placeholder="0" /></td>
-          <td><select>
-            <option value="cu.m" ${unit === "cu.m" ? "selected" : ""}>cu.m</option>
-            <option value="sq.m" ${unit === "sq.m" ? "selected" : ""}>sq.m</option>
-            <option value="linear m" ${unit === "linear m" ? "selected" : ""}>linear m</option>
-            <option value="unit" ${unit === "unit" ? "selected" : ""}>unit</option>
-            <option value="kg" ${unit === "kg" ? "selected" : ""}>kg</option>
-            <option value="lump sum" ${unit === "lump sum" ? "selected" : ""}>lump sum</option>
-          </select></td>
-          <td><input type="number" min="0" step="any" inputmode="decimal" placeholder="0.00" /></td>
-          <td><input type="number" min="0" step="any" inputmode="decimal" placeholder="0.00" /></td>
-          <td class="mat-cost">${currencySymbol()}0.00</td>
-          <td class="lab-cost">${currencySymbol()}0.00</td>
-          <td class="row-total">${currencySymbol()}0.00</td>
-        `;
-        $$("input, select", tr).forEach(inp => inp.addEventListener("input", recalc));
-        return tr;
-      }
+ panel.appendChild(table);
+ panel.appendChild(foot);
+ return panel;
+ }
 
-      function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
-      }
+ function makeRow(scopeText, unit) {
+ const tr = document.createElement("tr");
+ tr.innerHTML = `
+ <td><input type="text" value="${escapeHtml(scopeText)}" /></td>
+ <td><input type="number" min="0" step="any" inputmode="decimal" placeholder="0" /></td>
+ <td><select>
+ <option value="cu.m" ${unit === "cu.m" ? "selected" : ""}>cu.m</option>
+ <option value="sq.m" ${unit === "sq.m" ? "selected" : ""}>sq.m</option>
+ <option value="linear m" ${unit === "linear m" ? "selected" : ""}>linear m</option>
+ <option value="unit" ${unit === "unit" ? "selected" : ""}>unit</option>
+ <option value="kg" ${unit === "kg" ? "selected" : ""}>kg</option>
+ <option value="lump sum" ${unit === "lump sum" ? "selected" : ""}>lump sum</option>
+ </select></td>
+ <td><input type="number" min="0" step="any" inputmode="decimal" placeholder="0.00" /></td>
+ <td><input type="number" min="0" step="any" inputmode="decimal" placeholder="0.00" /></td>
+ <td class="mat-cost">${currencySymbol()}0.00</td>
+ <td class="lab-cost">${currencySymbol()}0.00</td>
+ <td class="row-total">${currencySymbol()}0.00</td>
+ `;
+ $$("input, select", tr).forEach(inp => inp.addEventListener("input", recalc));
+ return tr;
+ }
 
-      // Build tabs & panels
-      const dNames = Object.keys(scopes);
-      dNames.forEach((name, i) => {
-        const tab = document.createElement("button");
-        tab.type = "button";
-        tab.className = "tab" + (i === 0 ? " active" : "");
-        tab.textContent = name;
-        tab.addEventListener("click", () => activate(name));
-        tabsEl.appendChild(tab);
+ function escapeHtml(s) {
+ return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+ }
 
-        const panel = createTable(name, scopes[name]);
-        if (i === 0) panel.classList.add("active");
-        panelsEl.appendChild(panel);
-      });
+ // Build tabs & panels
+ const dNames = Object.keys(scopes);
+ dNames.forEach((name, i) => {
+ const tab = document.createElement("button");
+ tab.type = "button";
+ tab.className = "tab" + (i === 0 ? " active" : "");
+ tab.textContent = name;
+ tab.addEventListener("click", () => activate(name));
+ tabsEl.appendChild(tab);
 
-      function activate(name) {
-        $$(".tab").forEach(t => t.classList.remove("active"));
-        $$(".tab").find(t => t.textContent === name)?.classList.add("active");
-        $$(".panel").forEach(p => p.classList.remove("active"));
-        $(`.panel[data-discipline="${CSS.escape(name)}"]`)?.classList.add("active");
-      }
+ const panel = createTable(name, scopes[name]);
+ if (i === 0) panel.classList.add("active");
+ panelsEl.appendChild(panel);
+ });
 
-      function recalc() {
-        let grand = 0;
-        $$(".panel").forEach(panel => {
-          let discTotal = 0;
-          const rows = $$("tbody tr", panel);
-          rows.forEach(tr => {
-            const qty = parseFloat($$("input", tr)[1].value) || 0;
-            const ucm = parseFloat($$("input", tr)[2].value) || 0;
-            const ucl = parseFloat($$("input", tr)[3].value) || 0;
-            const mat = qty * ucm;
-            const lab = qty * ucl;
-            const tot = mat + lab;
-            $(".mat-cost", tr).textContent = currencySymbol() + fmt(mat, decPlaces());
-            $(".lab-cost", tr).textContent = currencySymbol() + fmt(lab, decPlaces());
-            $(".row-total", tr).textContent = currencySymbol() + fmt(tot, decPlaces());
-            discTotal += tot;
-          });
-          panel.querySelector(".discSymbol").textContent = currencySymbol();
-          panel.querySelector(".discTotal").textContent = fmt(discTotal, decPlaces());
-          grand += discTotal;
-        });
-        grandSymbolEl.textContent = currencySymbol();
-        grandTotalEl.textContent = fmt(grand, decPlaces());
-      }
+ function activate(name) {
+ $$(".tab").forEach(t => t.classList.remove("active"));
+ $$(".tab").find(t => t.textContent === name)?.classList.add("active");
+ $$(".panel").forEach(p => p.classList.remove("active"));
+ $(`.panel[data-discipline="${CSS.escape(name)}"]`)?.classList.add("active");
+ updateProjectData();
+ }
 
-      currencySel.addEventListener("change", () => {
-        currentCurrency = currencySel.value;
-        recalc();
-      });
+ function recalc() {
+ let grand = 0;
+ $$(".panel").forEach(panel => {
+ let discTotal = 0;
+ const rows = $$("tbody tr", panel);
+ rows.forEach(tr => {
+ const qty = parseFloat($$("input", tr)[1].value) || 0;
+ const ucm = parseFloat($$("input", tr)[2].value) || 0;
+ const ucl = parseFloat($$("input", tr)[3].value) || 0;
+ const mat = qty * ucm;
+ const lab = qty * ucl;
+ const tot = mat + lab;
+ $(".mat-cost", tr).textContent = currencySymbol() + fmt(mat, decPlaces());
+ $(".lab-cost", tr).textContent = currencySymbol() + fmt(lab, decPlaces());
+ $(".row-total", tr).textContent = currencySymbol() + fmt(tot, decPlaces());
+ discTotal += tot;
+ });
+ panel.querySelector(".discSymbol").textContent = currencySymbol();
+ panel.querySelector(".discTotal").textContent = fmt(discTotal, decPlaces());
+ grand += discTotal;
+ });
+ grandSymbolEl.textContent = currencySymbol();
+ grandTotalEl.textContent = fmt(grand, decPlaces());
+ updateProjectData();
+ }
 
-      // XLSX Export with Multiple Tabs
-      window.exportToXLSX = function() {
-        console.log("Export to XLSX started");
-        if (typeof XLSX === 'undefined') {
-          console.error("SheetJS not loaded");
-          alert("XLSX export failed: SheetJS library not available.");
-          return;
-        }
-        const wb = XLSX.utils.book_new();
-        $$(".panel").forEach((panel, index) => {
-          const wsData = [
-            ["Scope of Work", "Qty", "Unit", "Unit Cost (Material)", "Unit Cost (Labor)", "Material Cost", "Labor Cost", "Total"]
-          ];
-          $$("tbody tr", panel).forEach(tr => {
-            const scope = $$("input", tr)[0].value || "N/A";
-            const qty = parseFloat($$("input", tr)[1].value) || 0;
-            const unit = $$("select", tr)[0].value || "N/A";
-            const ucm = parseFloat($$("input", tr)[2].value) || 0;
-            const ucl = parseFloat($$("input", tr)[3].value) || 0;
-            const mat = qty * ucm;
-            const lab = qty * ucl;
-            const tot = mat + lab;
-            wsData.push([scope, qty, unit, ucm.toFixed(decPlaces()), ucl.toFixed(decPlaces()), mat.toFixed(decPlaces()), lab.toFixed(decPlaces()), tot.toFixed(decPlaces())]);
-          });
-          const ws = XLSX.utils.aoa_to_sheet(wsData);
-          XLSX.utils.book_append_sheet(wb, ws, panel.dataset.discipline);
-        });
-        XLSX.writeFile(wb, `construction_estimate_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}.xlsx`);
-        console.log("Export to XLSX completed");
-      };
+ currencySel.addEventListener("change", () => {
+ currentCurrency = currencySel.value;
+ recalc();
+ });
 
-      // Chat Popup Functionality
-      let isDragging = false;
-      let currentX;
-      let currentY;
-      let initialX;
-      let initialY;
+ // XLSX Export with Multiple Tabs
+ window.exportToXLSX = function() {
+ console.log("Export to XLSX started");
+ if (typeof XLSX === 'undefined') {
+ console.error("SheetJS not loaded");
+ alert("XLSX export failed: SheetJS library not available.");
+ return;
+ }
+ const wb = XLSX.utils.book_new();
+ $$(".panel").forEach((panel, index) => {
+ const wsData = [
+ ["Scope of Work", "Qty", "Unit", "Unit Cost (Material)", "Unit Cost (Labor)", "Material Cost", "Labor Cost", "Total"]
+ ];
+ $$("tbody tr", panel).forEach(tr => {
+ const scope = $$("input", tr)[0].value || "N/A";
+ const qty = parseFloat($$("input", tr)[1].value) || 0;
+ const unit = $$("select", tr)[0].value || "N/A";
+ const ucm = parseFloat($$("input", tr)[2].value) || 0;
+ const ucl = parseFloat($$("input", tr)[3].value) || 0;
+ const mat = qty * ucm;
+ const lab = qty * ucl;
+ const tot = mat + lab;
+ wsData.push([scope, qty, unit, ucm.toFixed(decPlaces()), ucl.toFixed(decPlaces()), mat.toFixed(decPlaces()), lab.toFixed(decPlaces()), tot.toFixed(decPlaces())]);
+ });
+ const ws = XLSX.utils.aoa_to_sheet(wsData);
+ XLSX.utils.book_append_sheet(wb, ws, panel.dataset.discipline);
+ });
+ XLSX.writeFile(wb, `construction_estimate_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}.xlsx');
+ console.log("Export to XLSX completed");
+ };
 
-      openChatBtn.addEventListener("click", () => {
-        chatPopup.classList.add("active");
-        if (!chatContent.innerHTML) {
-          chatContent.innerHTML = "<p><strong>AI:</strong> Hello! I’m here to help with your estimating questions. Try asking about formulas, units, or anything else!</p>";
-        }
-      });
+ // Update project data from inputs
+ function updateProjectData() {
+ projectData.location = prompt("Please enter the project location (e.g., city, country):") || projectData.location || "Unknown";
+ projectData.squareFootage = parseFloat(prompt("Please enter the square footage (m²):")) || projectData.squareFootage || 0;
+ projectData.materials = prompt("Please enter material preferences (e.g., standard, premium):") || projectData.materials || "Standard";
+ projectData.trades = {};
+ $$(".panel").forEach(panel => {
+ const discipline = panel.dataset.discipline;
+ projectData.trades[discipline] = $$("tbody tr", panel).map(tr => ({
+ scope: $$("input", tr)[0].value || "N/A",
+ qty: parseFloat($$("input", tr)[1].value) || 0,
+ unit: $$("select", tr)[0].value || "N/A",
+ ucm: parseFloat($$("input", tr)[2].value) || 0,
+ ucl: parseFloat($$("input", tr)[3].value) || 0
+ }));
+ });
+ }
 
-      $("#chatHeader").addEventListener("mousedown", startDragging);
-      document.addEventListener("mousemove", drag);
-      document.addEventListener("mouseup", stopDragging);
+ // Chat Popup Functionality
+ let isDragging = false;
+ let currentX;
+ let currentY;
+ let initialX;
+ let initialY;
 
-      function startDragging(e) {
-        initialX = e.clientX - (currentX || 0);
-        initialY = e.clientY - (currentY || 0);
-        isDragging = true;
-      }
+ openChatBtn.addEventListener("click", () => {
+ chatPopup.classList.add("active");
+ if (!chatContent.innerHTML) {
+ chatContent.innerHTML = "<p><strong>TantyBot:</strong> Hello! I’m TantyBot, your expert in construction cost estimating. Please provide project details (e.g., location, square footage, materials) or ask a question!</p>";
+ }
+ });
 
-      function drag(e) {
-        if (isDragging) {
-          e.preventDefault();
-          currentX = e.clientX - initialX;
-          currentY = e.clientY - initialY;
-          chatPopup.style.left = currentX + "px";
-          chatPopup.style.top = currentY + "px";
-        }
-      }
+ $("#chatHeader").addEventListener("mousedown", startDragging);
+ document.addEventListener("mousemove", drag);
+ document.addEventListener("mouseup", stopDragging);
 
-      function stopDragging() {
-        isDragging = false;
-      }
+ function startDragging(e) {
+ initialX = e.clientX - (currentX || 0);
+ initialY = e.clientY - (currentY || 0);
+ isDragging = true;
+ }
 
-      function sendMessage() {
-        const message = chatInput.value.trim();
-        if (message) {
-          chatContent.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
-          let response = "";
-          if (message.toLowerCase().includes("formula for total cost")) {
-            response = "Total cost = (Quantity × Unit Cost Material) + (Quantity × Unit Cost Labor)";
-          } else if (message.toLowerCase().includes("explain units")) {
-            response = "Units like sq.m (square meters), cu.m (cubic meters), and linear m are used to measure area, volume, and length respectively.";
-          } else {
-            response = "I can assist with basic estimating questions like formulas or units. For more complex queries, try the Full AI Chat.";
-          }
-          chatContent.innerHTML += `<p><strong>AI:</strong> ${response}</p>`;
-          chatInput.value = "";
-          chatContent.scrollTop = chatContent.scrollHeight;
-        }
-      }
+ function drag(e) {
+ if (isDragging) {
+ e.preventDefault();
+ currentX = e.clientX - initialX;
+ currentY = e.clientY - initialY;
+ chatPopup.style.left = currentX + "px";
+ chatPopup.style.top = currentY + "px";
+ }
+ }
 
-      function openGrokChat() {
-        try {
-          const data = {};
-          $$(".panel").forEach(panel => {
-            const discipline = panel.dataset.discipline;
-            data[discipline] = $$("tbody tr", panel).map(tr => {
-              const scope = $$("input", tr)[0].value || "N/A";
-              const qty = parseFloat($$("input", tr)[1].value) || 0;
-              const unit = $$("select", tr)[0].value || "N/A";
-              const ucm = parseFloat($$("input", tr)[2].value) || 0;
-              const ucl = parseFloat($$("input", tr)[3].value) || 0;
-              return { scope, qty, unit, ucm, ucl };
-            });
-          });
-          const query = encodeURIComponent(JSON.stringify(data));
-          window.open(`https://www.grok.com/?q=Provide%20construction%20estimating%20advice%20for%20${query}`, '_blank');
-          chatPopup.classList.remove("active");
-        } catch (error) {
-          alert("Failed to open full AI chat. Please visit https://www.grok.com/ manually.");
-          console.error("Grok chat error:", error);
-        }
-      }
+ function stopDragging() {
+ isDragging = false;
+ }
 
-      // Close chat on click outside
-      document.addEventListener("click", (e) => {
-        if (!chatPopup.contains(e.target) && e.target !== openChatBtn) {
-          chatPopup.classList.remove("active");
-        }
-      });
-    })();
-  </script>
+ function sendMessage() {
+ const message = chatInput.value.trim();
+ if (message) {
+ chatContent.innerHTML += `<p><strong>You:</strong> ${message}</p>`;
+ let response = handleTantyBotResponse(message);
+ chatContent.innerHTML += `<p><strong>TantyBot:</strong> ${response}</p>`;
+ chatInput.value = "";
+ chatContent.scrollTop = chatContent.scrollHeight;
+ }
+ }
+
+ function handleTantyBotResponse(message) {
+ if (!projectData.location || !projectData.squareFootage) updateProjectData();
+ if (message.toLowerCase().includes("estimate") || message.toLowerCase().includes("cost")) {
+ return generateCostEstimate();
+ } else if (message.toLowerCase().includes("formula")) {
+ return "A common formula is: Total Cost = (Quantity × Unit Cost Material) + (Quantity × Unit Cost Labor) + Indirect Costs + Contingency (5-15%).";
+ } else if (message.toLowerCase().includes("units")) {
+ return "Units include sq.m (square meters), cu.m (cubic meters), and linear m. I can convert to English units if needed.";
+ } else if (message.toLowerCase().includes("chart")) {
+ return "Would you like me to create a chart to visualize this cost breakdown?";
+ } else if (message.toLowerCase().includes("canvas")) {
+ openCanvas();
+ return "Canvas panel opened for calculations. Enter your code or request a chart!";
+ } else {
+ return "I can assist with cost estimates, formulas, units, or charts. Please provide more details or ask a specific question!";
+ }
+ }
+
+ function generateCostEstimate() {
+ let totalCost = 0;
+ let estimate = "<h4>Cost Estimate Breakdown</h4><ul>";
+ for (let discipline in projectData.trades) {
+ let discTotal = 0;
+ estimate += `<li><strong>${discipline}:</strong><ul>`;
+ projectData.trades[discipline].forEach((item, index) => {
+ const matCost = item.qty * item.ucm;
+ const labCost = item.qty * item.ucl;
+ const itemTotal = matCost + labCost;
+ discTotal += itemTotal;
+ estimate += `<li>${index + 1}. ${item.scope}: ${item.qty} ${item.unit} @ ${currencySymbol()}${fmt(item.ucm)} (M), ${currencySymbol()}${fmt(item.ucl)} (L) = ${currencySymbol()}${fmt(itemTotal)}</li>`;
+ });
+ estimate += `<li>Total ${discipline}: ${currencySymbol()}${fmt(discTotal)}</li></ul>`;
+ totalCost += discTotal;
+ }
+ const indirectCost = totalCost * 0.15;
+ const contingency = totalCost * 0.10;
+ totalCost += indirectCost + contingency;
+ estimate += `<li><strong>Indirect Costs (15%):</strong> ${currencySymbol()}${fmt(indirectCost)}</li>`;
+ estimate += `<li><strong>Contingency (10%):</strong> ${currencySymbol()}${fmt(contingency)}</li>`;
+ estimate += `<li><strong>Grand Total:</strong> ${currencySymbol()}${fmt(totalCost)}</li></ul>`;
+ estimate += "Assumption: Standard materials and average labor rates. For precision, please specify location and material grade.";
+ return estimate;
+ }
+
+ function openCanvas() {
+ canvasPanel.classList.add("active");
+ canvasContent.innerHTML = "<p>Enter JavaScript code or request a chart (e.g., 'plot cost vs. quantity').</p><textarea id='canvasInput' rows='10' style='width: 100%;'></textarea><br>";
+ const canvasInput = $("#canvasInput");
+ canvasInput.addEventListener("input", () => {
+ try {
+ const result = eval(canvasInput.value);
+ canvasContent.innerHTML += `<p>Result: ${result}</p>`;
+ } catch (e) {
+ canvasContent.innerHTML += `<p>Error: ${e.message}</p>`;
+ }
+ });
+ }
+
+ function closeCanvas() {
+ canvasPanel.classList.remove("active");
+ canvasContent.innerHTML = "";
+ }
+
+ function openFullChat() {
+ try {
+ const query = encodeURIComponent(JSON.stringify(projectData));
+ window.open(`https://www.grok.com/?q=Provide%20construction%20cost%20estimate%20for%20${query}`, '_blank');
+ chatPopup.classList.remove("active");
+ } catch (error) {
+ alert("Failed to open full AI chat. Please visit https://www.grok.com/ manually.");
+ console.error("Grok chat error:", error);
+ }
+ }
+
+ // Close chat on click outside
+ document.addEventListener("click", (e) => {
+ if (!chatPopup.contains(e.target) && e.target !== openChatBtn) {
+ chatPopup.classList.remove("active");
+ }
+ });
+ })();
+ </script>
 </body>
 </html>
