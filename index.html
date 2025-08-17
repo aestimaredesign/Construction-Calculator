@@ -78,10 +78,18 @@
     <div style="margin-top: 20px;">
       <button class="btn" onclick="exportToCSV()">Export to CSV</button>
       <button class="btn" onclick="exportToPDF()">Export to PDF</button>
+      <button class="btn" onclick="exportToXLSX()">Export to XLSX</button>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    // Load jsPDF with fallback
+    if (typeof window.jspdf === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.3/jspdf.umd.min.js"><\/script>');
+    }
+    // Load SheetJS for XLSX export
+    document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>');
+  </script>
   <script>
     (function () {
       // ----- Data: realistic scopes per discipline -----
@@ -376,6 +384,12 @@
 
       // PDF Export
       window.exportToPDF = function() {
+        console.log("Export to PDF started");
+        if (typeof window.jspdf === 'undefined') {
+          console.error("jsPDF not loaded");
+          alert("PDF export failed: jsPDF library not available.");
+          return;
+        }
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         let yOffset = 10;
@@ -388,9 +402,9 @@
 
           const rows = [];
           $$("tbody tr", panel).forEach(tr => {
-            const scope = $$("input", tr)[0].value;
+            const scope = $$("input", tr)[0].value || "N/A";
             const qty = parseFloat($$("input", tr)[1].value) || 0;
-            const unit = $$("select", tr)[0].value;
+            const unit = $$("select", tr)[0].value || "N/A";
             const ucm = parseFloat($$("input", tr)[2].value) || 0;
             const ucl = parseFloat($$("input", tr)[3].value) || 0;
             const mat = qty * ucm;
@@ -401,10 +415,10 @@
 
           doc.autoTable({
             head: [["Scope of Work", "Qty", "Unit", "Unit Cost (Mat)", "Unit Cost (Lab)", "Material Cost", "Labor Cost", "Total"]],
-            body: rows,
+            body: rows.length ? rows : [["No data", "", "", "", "", "", "", ""]],
             startY: yOffset,
             theme: "grid",
-            styles: { fontSize: 8 },
+            styles: { fontSize: 8, cellPadding: 2 },
             columnStyles: { 0: { cellWidth: 50 } }
           });
 
@@ -419,6 +433,38 @@
         doc.setFontSize(14);
         doc.text(`Grand Total: ${currencySymbol()}${fmt(grand, decPlaces())}`, 10, yOffset + 10);
         doc.save(`construction_estimate_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}.pdf`);
+        console.log("Export to PDF completed");
+      };
+
+      // XLSX Export
+      window.exportToXLSX = function() {
+        console.log("Export to XLSX started");
+        if (typeof XLSX === 'undefined') {
+          console.error("SheetJS not loaded");
+          alert("XLSX export failed: SheetJS library not available.");
+          return;
+        }
+        const wb = XLSX.utils.book_new();
+        $$(".panel").forEach((panel, index) => {
+          const wsData = [
+            ["Scope of Work", "Qty", "Unit", "Unit Cost (Material)", "Unit Cost (Labor)", "Material Cost", "Labor Cost", "Total"]
+          ];
+          $$("tbody tr", panel).forEach(tr => {
+            const scope = $$("input", tr)[0].value || "N/A";
+            const qty = parseFloat($$("input", tr)[1].value) || 0;
+            const unit = $$("select", tr)[0].value || "N/A";
+            const ucm = parseFloat($$("input", tr)[2].value) || 0;
+            const ucl = parseFloat($$("input", tr)[3].value) || 0;
+            const mat = qty * ucm;
+            const lab = qty * ucl;
+            const tot = mat + lab;
+            wsData.push([scope, qty, unit, ucm.toFixed(decPlaces()), ucl.toFixed(decPlaces()), mat.toFixed(decPlaces()), lab.toFixed(decPlaces()), tot.toFixed(decPlaces())]);
+          });
+          const ws = XLSX.utils.aoa_to_sheet(wsData);
+          XLSX.utils.book_append_sheet(wb, ws, panel.dataset.discipline);
+        });
+        XLSX.writeFile(wb, `construction_estimate_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}.xlsx`);
+        console.log("Export to XLSX completed");
       };
 
       recalc();
