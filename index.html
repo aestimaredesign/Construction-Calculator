@@ -25,15 +25,18 @@
       box-sizing: border-box; width: 100%; max-width: 100%; /* Prevent overflow */
     }
     input[type="date"] {
-      padding-right: 40px; /* More space for date picker icon */
+      padding-right: 40px; /* Extra space for date picker icon */
       appearance: none; /* Normalize across browsers */
       -webkit-appearance: none;
       -moz-appearance: none;
-      position: relative; /* Ensure picker stays within bounds */
+      position: relative;
     }
     input[type="date"]::-webkit-calendar-picker-indicator {
-      padding: 0; margin: 0; width: 20px; height: 20px; /* Constrain picker icon size */
+      padding: 0; margin: 0; width: 20px; height: 20px; /* Constrain picker icon */
       cursor: pointer;
+    }
+    input[type="date"]::-moz-calendar-picker-indicator {
+      padding: 0; margin: 0; width: 20px; height: 20px; /* Firefox fallback */
     }
     .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
     .tab {
@@ -59,11 +62,15 @@
     .grand .label { color: #9a3412; font-weight: 700; }
     .grand .amount { font-weight: 800; font-size: 1.1rem; }
     .hint { color: var(--ink-soft); font-size: 12px; }
-    .project-info { margin-bottom: 20px; border: 1px solid var(--border); border-radius: 12px; padding: 20px; } /* Increased padding */
+    .project-info { margin-bottom: 20px; border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
     .project-info h2 { font-size: 1.2rem; margin: 0 0 12px; }
-    .project-info .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; } /* Wider columns, larger gap */
+    .project-info .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; } /* Wider columns */
     .project-info label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 4px; }
-    .project-info input { width: 100%; box-sizing: border-box; overflow: hidden; } /* Prevent content overflow */
+    .project-info input { width: 100%; box-sizing: border-box; overflow: hidden; }
+    @media (max-width: 600px) {
+      .project-info .form-grid { grid-template-columns: 1fr; } /* Stack on small screens */
+      input[type="date"] { padding-right: 30px; } /* Adjust padding for mobile */
+    }
   </style>
 </head>
 <body>
