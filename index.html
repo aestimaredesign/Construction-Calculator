@@ -143,17 +143,15 @@
           { name: "Grading & Leveling", unit: "sq.m" },
           { name: "Formwork & Scaffolding", unit: "sq.m" },
           { name: "Rebar Fabrication & Installation", unit: "kg" },
+          { name: "Rebars", unit: "kg" }, // Removed "Fabrication"
+          { name: "Structural Steel Works", unit: "lump sum" }, // Moved here, no indent
           { name: "Concrete Pouring – Foundations", unit: "cu.m" },
           { name: "Concrete Pouring – Columns/Beams/Slabs", unit: "cu.m" },
           { name: "Masonry Wall Construction", unit: "sq.m" },
           { name: "Lintel/Sill Beams", unit: "linear m" },
           { name: "Perimeter Fence / Retaining Wall", unit: "linear m" },
           { name: "Drainage & Culverts", unit: "linear m" },
-          { name: "Septic Tank Construction", unit: "cu.m" },
-          { name: "Structural Steel Works", unit: "lump sum", indent: 1 }, // Nested section
-          { name: "Steel Beam Fabrication", unit: "linear m", indent: 2 }, // Subtask
-          { name: "Steel Column Erection", unit: "unit", indent: 2 },     // Subtask
-          { name: "Steel Truss Assembly", unit: "sq.m", indent: 2 }      // Subtask
+          { name: "Septic Tank Construction", unit: "cu.m" }
         ],
         "Architectural Works": [
           { name: "Wall Plastering – Interior", unit: "sq.m" },
@@ -414,7 +412,8 @@
           console.error("Invalid row or tbody element");
           return;
         }
-        const indent = confirm("Indent new row as a subtask?") ? Math.min(currentIndent + 1, 2) : currentIndent;
+        const isSubtask = confirm("Add as Subtask?");
+        const indent = isSubtask ? Math.min(currentIndent + 1, 2) : currentIndent;
         const newRow = makeRow("New Scope", "unit", indent);
         tbody.insertBefore(newRow, tr.nextSibling);
         newRow.className = indent > 0 ? `indent-${indent}` : "";
@@ -507,7 +506,7 @@
             const scopeInput = $$("input", tr)[0];
             const scope = scopeInput.value || "N/A";
             const indentLevel = tr.className.match(/indent-(\d+)/)?.[1] || 0;
-            const indentedScope = "  ".repeat(indentLevel) + scope; // Add spaces for indentation
+            const indentedScope = "  ".repeat(indentLevel) + scope;
             const qty = parseFloat($$("input", tr)[1].value) || 0;
             const unit = $$("select", tr)[0].value || "N/A";
             const ucm = parseFloat($$("input", tr)[2].value) || 0;
