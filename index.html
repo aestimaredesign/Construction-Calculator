@@ -63,6 +63,7 @@
       input[type="date"] { padding-right: 30px; }
     }
     .indent-1 { padding-left: 20px; }
+    .indent-2 { padding-left: 40px; }
     .btn-row { display: flex; gap: 4px; }
   </style>
 </head>
@@ -130,6 +131,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
   <script>
     (function () {
       const scopes = {
@@ -315,7 +317,7 @@
 
       function makeRow(scopeText, unit, indentLevel = 0) {
         const tr = document.createElement("tr");
-        const indentClass = indentLevel > 0 ? "indent-" + indentLevel : "";
+        const indentClass = indentLevel > 0 ? `indent-${indentLevel}` : "";
         tr.innerHTML = `
           <td class="${indentClass}"><input type="text" value="${escapeHtml(scopeText)}" /></td>
           <td><input type="number" min="0" step="any" inputmode="decimal" placeholder="0" /></td>
@@ -400,17 +402,24 @@
 
       window.deleteRow = function(btn) {
         const tr = btn.closest("tr");
-        if (tr) tr.remove();
-        recalc();
+        if (tr) {
+          tr.remove();
+          recalc();
+        }
       };
 
       window.addRowAfter = function(btn, currentIndent) {
         const tr = btn.closest("tr");
         const tbody = tr.closest("tbody");
-        const newRow = makeRow("New Scope", "unit", currentIndent);
+        if (!tr || !tbody) {
+          console.error("Invalid row or tbody element");
+          return;
+        }
+        const indent = confirm("Indent new row as a subtask?") ? Math.min(currentIndent + 1, 2) : currentIndent; // Limit to 2 levels
+        const newRow = makeRow("New Scope", "unit", indent);
         tbody.insertBefore(newRow, tr.nextSibling);
-        const indent = confirm("Indent new row as a subtask?") ? currentIndent + 1 : currentIndent;
         newRow.className = indent > 0 ? `indent-${indent}` : "";
+        console.log(`Added row with indent level: ${indent}`);
         recalc();
       };
 
@@ -465,9 +474,9 @@
 
       window.exportToPDF = function() {
         console.log("Export to PDF started");
-        if (typeof jsPDF === 'undefined') {
-          console.error("jsPDF not loaded");
-          alert("PDF export failed: jsPDF library not available.");
+        if (typeof jspdf === 'undefined' || typeof jspdf.jsPDF === 'undefined') {
+          console.error("jsPDF or autoTable not loaded");
+          alert("PDF export failed: jsPDF or autoTable library not available.");
           return;
         }
         const { jsPDF } = window.jspdf;
@@ -512,7 +521,8 @@
             head: [tableData[0]],
             body: tableData.slice(1),
             theme: 'striped',
-            margin: { top: 20 }
+            margin: { top: 20 },
+            styles: { overflow: 'linebreak' } // Handle long text
           });
           y = doc.lastAutoTable.finalY + 10;
         });
