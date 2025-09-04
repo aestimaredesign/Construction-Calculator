@@ -22,6 +22,18 @@
     .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     select, button, input[type="text"], input[type="date"] {
       border: 1px solid var(--border); background: white; padding: 6px 10px; border-radius: 8px; font-size: 14px;
+      box-sizing: border-box; width: 100%; max-width: 100%; /* Prevent overflow */
+    }
+    input[type="date"] {
+      padding-right: 40px; /* More space for date picker icon */
+      appearance: none; /* Normalize across browsers */
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      position: relative; /* Ensure picker stays within bounds */
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      padding: 0; margin: 0; width: 20px; height: 20px; /* Constrain picker icon size */
+      cursor: pointer;
     }
     .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
     .tab {
@@ -47,11 +59,11 @@
     .grand .label { color: #9a3412; font-weight: 700; }
     .grand .amount { font-weight: 800; font-size: 1.1rem; }
     .hint { color: var(--ink-soft); font-size: 12px; }
-    .project-info { margin-bottom: 20px; border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
-    .project-info h2 { font-size: 1.2rem; margin: 0 0 10px; }
-    .project-info .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+    .project-info { margin-bottom: 20px; border: 1px solid var(--border); border-radius: 12px; padding: 20px; } /* Increased padding */
+    .project-info h2 { font-size: 1.2rem; margin: 0 0 12px; }
+    .project-info .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; } /* Wider columns, larger gap */
     .project-info label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 4px; }
-    .project-info input { width: 100%; box-sizing: border-box; }
+    .project-info input { width: 100%; box-sizing: border-box; overflow: hidden; } /* Prevent content overflow */
   </style>
 </head>
 <body>
@@ -371,6 +383,9 @@
         currentCurrency = currencySel.value;
         recalc();
       });
+
+      // Set default date to today
+      $("#projectDate").value = new Date().toISOString().split("T")[0];
 
       // XLSX Export with Project Information and Multiple Tabs
       window.exportToXLSX = function() {
