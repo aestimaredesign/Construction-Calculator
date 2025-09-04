@@ -22,22 +22,13 @@
     .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     select, button, input[type="text"], input[type="date"] {
       border: 1px solid var(--border); background: white; padding: 6px 10px; border-radius: 8px; font-size: 14px;
-      box-sizing: border-box; width: 100%; max-width: 100%; /* Prevent overflow */
+      box-sizing: border-box; width: 100%; max-width: 100%;
     }
     input[type="date"] {
-      padding-right: 40px; /* Extra space for date picker icon */
-      appearance: none; /* Normalize across browsers */
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      position: relative;
+      padding-right: 40px; appearance: none; -webkit-appearance: none; -moz-appearance: none; position: relative;
     }
-    input[type="date"]::-webkit-calendar-picker-indicator {
-      padding: 0; margin: 0; width: 20px; height: 20px; /* Constrain picker icon */
-      cursor: pointer;
-    }
-    input[type="date"]::-moz-calendar-picker-indicator {
-      padding: 0; margin: 0; width: 20px; height: 20px; /* Firefox fallback */
-    }
+    input[type="date"]::-webkit-calendar-picker-indicator { padding: 0; margin: 0; width: 20px; height: 20px; cursor: pointer; }
+    input[type="date"]::-moz-calendar-picker-indicator { padding: 0; margin: 0; width: 20px; height: 20px; }
     .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 14px; }
     .tab {
       border: 1px solid var(--border); padding: 8px 10px; border-radius: 10px; background: var(--muted);
@@ -64,13 +55,15 @@
     .hint { color: var(--ink-soft); font-size: 12px; }
     .project-info { margin-bottom: 20px; border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
     .project-info h2 { font-size: 1.2rem; margin: 0 0 12px; }
-    .project-info .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; } /* Wider columns */
+    .project-info .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
     .project-info label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 4px; }
     .project-info input { width: 100%; box-sizing: border-box; overflow: hidden; }
     @media (max-width: 600px) {
-      .project-info .form-grid { grid-template-columns: 1fr; } /* Stack on small screens */
-      input[type="date"] { padding-right: 30px; } /* Adjust padding for mobile */
+      .project-info .form-grid { grid-template-columns: 1fr; }
+      input[type="date"] { padding-right: 30px; }
     }
+    .indent-1 { padding-left: 20px; }
+    .btn-row { display: flex; gap: 4px; }
   </style>
 </head>
 <body>
@@ -131,13 +124,14 @@
     </div>
     <div style="margin-top: 20px;">
       <button class="btn" onclick="exportToXLSX()">Export to XLSX</button>
+      <button class="btn secondary" onclick="exportToPDF()">Download PDF</button>
     </div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
     (function () {
-      // ----- Data: realistic scopes per discipline -----
       const scopes = {
         "Civil-Structural Works": [
           { name: "Site Clearing & Grubbing", unit: "sq.m" },
@@ -154,6 +148,11 @@
           { name: "Perimeter Fence / Retaining Wall", unit: "linear m" },
           { name: "Drainage & Culverts", unit: "linear m" },
           { name: "Septic Tank Construction", unit: "cu.m" }
+        ],
+        "Structural Steel Works": [
+          { name: "Steel Beam Fabrication", unit: "linear m" },
+          { name: "Steel Column Erection", unit: "unit" },
+          { name: "Steel Truss Assembly", unit: "sq.m" }
         ],
         "Architectural Works": [
           { name: "Wall Plastering – Interior", unit: "sq.m" },
@@ -229,7 +228,6 @@
         ]
       };
 
-      // ----- Currency symbols & formatting -----
       const currencyMap = {
         PHP: { symbol: "₱", dec: 2 },
         USD: { symbol: "$", dec: 2 },
@@ -262,7 +260,6 @@
         return currencyMap[currentCurrency].dec;
       }
 
-      // Create a table element for a discipline
       function createTable(dName, rows) {
         const panel = document.createElement("div");
         panel.className = "panel";
@@ -280,21 +277,25 @@
               <th style="width:140px">Material Cost</th>
               <th style="width:140px">Labor Cost</th>
               <th style="width:140px">Total</th>
+              <th style="width:100px">Actions</th>
             </tr>
           </thead>
           <tbody></tbody>
         `;
         const tbody = table.querySelector("tbody");
 
-        // Seed rows
-        rows.forEach(scope => tbody.appendChild(makeRow(scope.name, scope.unit)));
+        rows.forEach(scope => {
+          const tr = makeRow(scope.name, scope.unit, scope.indent || 0);
+          tbody.appendChild(tr);
+        });
 
         const addBtn = document.createElement("button");
         addBtn.className = "btn secondary";
         addBtn.type = "button";
         addBtn.textContent = "+ Add Scope";
         addBtn.addEventListener("click", () => {
-          tbody.appendChild(makeRow("New Scope", "unit"));
+          const tr = makeRow("New Scope", "unit");
+          tbody.appendChild(tr);
           recalc();
         });
 
@@ -312,10 +313,11 @@
         return panel;
       }
 
-      function makeRow(scopeText, unit) {
+      function makeRow(scopeText, unit, indentLevel = 0) {
         const tr = document.createElement("tr");
+        const indentClass = indentLevel > 0 ? "indent-" + indentLevel : "";
         tr.innerHTML = `
-          <td><input type="text" value="${escapeHtml(scopeText)}" /></td>
+          <td class="${indentClass}"><input type="text" value="${escapeHtml(scopeText)}" /></td>
           <td><input type="number" min="0" step="any" inputmode="decimal" placeholder="0" /></td>
           <td><select>
             <option value="cu.m" ${unit === "cu.m" ? "selected" : ""}>cu.m</option>
@@ -330,6 +332,10 @@
           <td class="mat-cost">${currencySymbol()}0.00</td>
           <td class="lab-cost">${currencySymbol()}0.00</td>
           <td class="row-total">${currencySymbol()}0.00</td>
+          <td class="btn-row">
+            <button class="btn secondary" onclick="addRowAfter(this, ${indentLevel})">Add</button>
+            <button class="btn secondary" onclick="deleteRow(this)">Delete</button>
+          </td>
         `;
         $$("input, select", tr).forEach(inp => inp.addEventListener("input", recalc));
         return tr;
@@ -339,7 +345,6 @@
         return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
       }
 
-      // Build tabs & panels
       const dNames = Object.keys(scopes);
       dNames.forEach((name, i) => {
         const tab = document.createElement("button");
@@ -391,10 +396,24 @@
         recalc();
       });
 
-      // Set default date to today
       $("#projectDate").value = new Date().toISOString().split("T")[0];
 
-      // XLSX Export with Project Information and Multiple Tabs
+      window.deleteRow = function(btn) {
+        const tr = btn.closest("tr");
+        if (tr) tr.remove();
+        recalc();
+      };
+
+      window.addRowAfter = function(btn, currentIndent) {
+        const tr = btn.closest("tr");
+        const tbody = tr.closest("tbody");
+        const newRow = makeRow("New Scope", "unit", currentIndent);
+        tbody.insertBefore(newRow, tr.nextSibling);
+        const indent = confirm("Indent new row as a subtask?") ? currentIndent + 1 : currentIndent;
+        newRow.className = indent > 0 ? `indent-${indent}` : "";
+        recalc();
+      };
+
       window.exportToXLSX = function() {
         console.log("Export to XLSX started");
         if (typeof XLSX === 'undefined') {
@@ -403,8 +422,6 @@
           return;
         }
         const wb = XLSX.utils.book_new();
-
-        // Create a cover sheet for project information
         const projectInfo = {
           "Project Name": $("#projectName").value || "N/A",
           "Client Name": $("#clientName").value || "N/A",
@@ -415,19 +432,14 @@
         };
         const coverData = [
           ["Construction Estimating Calculator"],
-          [],
-          ...Object.entries(projectInfo).map(([key, value]) => [key, value]),
-          [],
-          ["Currency", currencySel.options[currencySel.selectedIndex].text]
+          [], ...Object.entries(projectInfo).map(([key, value]) => [key, value]),
+          [], ["Currency", currencySel.options[currencySel.selectedIndex].text]
         ];
         const coverSheet = XLSX.utils.aoa_to_sheet(coverData);
         XLSX.utils.book_append_sheet(wb, coverSheet, "Project Info");
 
-        // Create sheets for each discipline
         $$(".panel").forEach((panel, index) => {
-          const wsData = [
-            ["Scope of Work", "Qty", "Unit", "Unit Cost (Material)", "Unit Cost (Labor)", "Material Cost", "Labor Cost", "Total"]
-          ];
+          const wsData = [["Scope of Work", "Qty", "Unit", "Unit Cost (Material)", "Unit Cost (Labor)", "Material Cost", "Labor Cost", "Total"]];
           $$("tbody tr", panel).forEach(tr => {
             const scope = $$("input", tr)[0].value || "N/A";
             const qty = parseFloat($$("input", tr)[1].value) || 0;
@@ -439,22 +451,77 @@
             const tot = mat + lab;
             wsData.push([scope, qty, unit, ucm.toFixed(decPlaces()), ucl.toFixed(decPlaces()), mat.toFixed(decPlaces()), lab.toFixed(decPlaces()), tot.toFixed(decPlaces())]);
           });
-          wsData.push([]);
-          wsData.push(["Total", "", "", "", "", "", "", fmt(parseFloat(panel.querySelector(".discTotal").textContent.replace(/,/g, "")), decPlaces())]);
+          wsData.push([], ["Total", "", "", "", "", "", "", fmt(parseFloat(panel.querySelector(".discTotal").textContent.replace(/,/g, "")), decPlaces())]);
           const ws = XLSX.utils.aoa_to_sheet(wsData);
           XLSX.utils.book_append_sheet(wb, ws, panel.dataset.discipline);
         });
 
-        // Add a summary sheet for grand total
-        const summaryData = [
-          ["Grand Total"],
-          [currencySymbol() + grandTotalEl.textContent]
-        ];
+        const summaryData = [["Grand Total"], [currencySymbol() + grandTotalEl.textContent]];
         const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
         XLSX.utils.book_append_sheet(wb, summarySheet, "Summary");
-
         XLSX.writeFile(wb, `construction_estimate_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}.xlsx`);
         console.log("Export to XLSX completed");
+      };
+
+      window.exportToPDF = function() {
+        console.log("Export to PDF started");
+        if (typeof jsPDF === 'undefined') {
+          console.error("jsPDF not loaded");
+          alert("PDF export failed: jsPDF library not available.");
+          return;
+        }
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(12);
+        doc.text("Construction Estimating Calculator", 10, 10);
+        doc.text("Project Information", 10, 20);
+        const projectInfo = {
+          "Project Name": $("#projectName").value || "N/A",
+          "Client Name": $("#clientName").value || "N/A",
+          "Company Name": $("#companyName").value || "N/A",
+          "Project Location": $("#projectLocation").value || "N/A",
+          "Date": $("#projectDate").value || "N/A",
+          "Prepared By": $("#preparedBy").value || "N/A"
+        };
+        let y = 30;
+        for (const [key, value] of Object.entries(projectInfo)) {
+          doc.text(`${key}: ${value}`, 10, y);
+          y += 10;
+        }
+        doc.text(`Currency: ${currencySel.options[currencySel.selectedIndex].text}`, 10, y);
+        y += 20;
+
+        $$(".panel").forEach((panel, index) => {
+          doc.addPage();
+          doc.text(panel.dataset.discipline, 10, 10);
+          const tableData = [["Scope of Work", "Qty", "Unit", "Unit Cost (Material)", "Unit Cost (Labor)", "Material Cost", "Labor Cost", "Total"]];
+          $$("tbody tr", panel).forEach(tr => {
+            const scope = $$("input", tr)[0].value || "N/A";
+            const qty = parseFloat($$("input", tr)[1].value) || 0;
+            const unit = $$("select", tr)[0].value || "N/A";
+            const ucm = parseFloat($$("input", tr)[2].value) || 0;
+            const ucl = parseFloat($$("input", tr)[3].value) || 0;
+            const mat = qty * ucm;
+            const lab = qty * ucl;
+            const tot = mat + lab;
+            tableData.push([scope, qty, unit, ucm.toFixed(decPlaces()), ucl.toFixed(decPlaces()), mat.toFixed(decPlaces()), lab.toFixed(decPlaces()), tot.toFixed(decPlaces())]);
+          });
+          tableData.push([], ["Total", "", "", "", "", "", "", fmt(parseFloat(panel.querySelector(".discTotal").textContent.replace(/,/g, "")), decPlaces())]);
+          doc.autoTable({
+            startY: 20,
+            head: [tableData[0]],
+            body: tableData.slice(1),
+            theme: 'striped',
+            margin: { top: 20 }
+          });
+          y = doc.lastAutoTable.finalY + 10;
+        });
+
+        doc.addPage();
+        doc.text("Summary", 10, 10);
+        doc.text(`Grand Total: ${currencySymbol() + grandTotalEl.textContent}`, 10, 20);
+        doc.save(`construction_estimate_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}.pdf`);
+        console.log("Export to PDF completed");
       };
     })();
   </script>
