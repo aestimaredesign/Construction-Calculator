@@ -149,12 +149,11 @@
           { name: "Lintel/Sill Beams", unit: "linear m" },
           { name: "Perimeter Fence / Retaining Wall", unit: "linear m" },
           { name: "Drainage & Culverts", unit: "linear m" },
-          { name: "Septic Tank Construction", unit: "cu.m" }
-        ],
-        "Structural Steel Works": [
-          { name: "Steel Beam Fabrication", unit: "linear m" },
-          { name: "Steel Column Erection", unit: "unit" },
-          { name: "Steel Truss Assembly", unit: "sq.m" }
+          { name: "Septic Tank Construction", unit: "cu.m" },
+          { name: "Structural Steel Works", unit: "lump sum", indent: 1 }, // Nested section
+          { name: "Steel Beam Fabrication", unit: "linear m", indent: 2 }, // Subtask
+          { name: "Steel Column Erection", unit: "unit", indent: 2 },     // Subtask
+          { name: "Steel Truss Assembly", unit: "sq.m", indent: 2 }      // Subtask
         ],
         "Architectural Works": [
           { name: "Wall Plastering – Interior", unit: "sq.m" },
